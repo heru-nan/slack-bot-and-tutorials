@@ -1,0 +1,2 @@
+slackclient==2.9.3
+slackeventsapi==2.2.1
