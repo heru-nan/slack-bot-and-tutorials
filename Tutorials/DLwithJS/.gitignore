@@ -1,0 +1,3 @@
+venv/
+static/tfjs-models
+node_modules
