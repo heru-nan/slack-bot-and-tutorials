@@ -1,0 +1,101 @@
+version: '3.6'  
+services:
+  rabbitmq:
+   image: rabbitmq:3-management
+   ports:
+      # The standard AMQP protocol port
+      - '5672:5672'
+      # HTTP management UI
+      - '15672:15672'
+   networks:
+      - network
+   container_name: rabbitmq
+   restart: 'always'
+
+  nestor_wikipedia_search:
+   build:
+      context: ./nestor_wikipedia_search
+   container_name: nestor_wikipedia_search
+   networks:
+      - network
+   environment:
+      - RABBITMQ_HOST=rabbitmq
+   depends_on:
+      - rabbitmq
+
+  nestor_slack_reader:
+   build:
+     context: ./nestor_slack_reader
+   container_name: nestor_slack_reader
+   environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SLACK_TOKEN=${SLACK_TOKEN}
+      - SLACK_SIGNING_SECRET=${SLACK_SIGNING_SECRET}
+   depends_on:
+      - rabbitmq
+   ports:
+      - 3000:3000   
+   networks:
+      - network
+
+  nestor_slack_writer:
+   build:
+     context: ./nestor_slack_writer
+   container_name: nestor_slack_writer
+   environment:
+      - RABBITMQ_HOST=rabbitmq
+      - SLACK_TOKEN=${SLACK_TOKEN}
+   depends_on:
+      - rabbitmq   
+   networks:
+      - network
+
+  nestor_save_msgs:
+   build:
+     context: ./nestor_save_msgs
+   container_name: nestor_save_msgs
+   networks:
+     - network
+   environment:
+     - RABBITMQ_HOST=rabbitmq
+     - MYSQL_HOST=database
+   depends_on:
+     - rabbitmq
+     - database
+  
+  nestor_handle_querys:
+   build:
+     context: ./nestor_handle_querys
+   container_name: nestor_handle_querys
+   networks:
+     - network
+   environment:
+     - RABBITMQ_HOST=rabbitmq
+     - MYSQL_HOST=database
+   depends_on:
+     - rabbitmq
+     - database
+
+  database:
+   image: mysql
+   restart: always
+   container_name: nestor_mysql
+   networks:
+     - network
+   environment:
+     MYSQL_DATABASE: 'db'
+      # So you don't have to use root, but you can if you like
+     MYSQL_USER: 'user'
+      # You can use whatever password you like
+     MYSQL_PASSWORD: 'password'
+      # Password for root access
+     MYSQL_ROOT_PASSWORD: 'password'
+   volumes:
+     - ./my-db:/var/lib/mysql
+   ports:
+     - '3306:3306'
+
+
+  
+networks:
+  network: {}
