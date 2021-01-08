@@ -33,24 +33,45 @@ channel.queue_bind(exchange='nestor', queue=queue_name, routing_key="db_querys")
 
 print(' [*] Waiting for messages. To exit press CTRL+C')
 
+def cheqQuery(q):
+    allow = ["select", "show"]
+    
+    for w in allow:
+        if w in q:
+            return True
+    return False
+
+def createStr(fields_names, data):
+    if fields_names[0] == "Error from query":
+        return "Query Incorrecta."
+    res = "\n"
+    n = len(fields_names)
+    for i in fields_names:
+        res += (i + " | \t")
+    for i in data:
+        res += "\n"
+        for j in range(n):
+            val = i[j]
+            res += "{:<2} | ".format(i[j])
+    return res
+
+
 def callback(ch, method, properties, body):
     if str(body).startswith("b'[sql]"):
         query = str(body)[7:-1]
+        
         print("sql -> " + query)
+        
+        if not cheqQuery(query):
+            channel.basic_publish(exchange='nestor', routing_key="publicar_slack", body="[sql][result]" + " query not supported")
+            return
 
         fields_names, data = get_query(query)
         
-        n = len(fields_names)
-        res = "\n"
-        for i in fields_names: res += (i + " | \t")
-        for i in data:
-            res += "\n"
-            for j in range(n):
-                val = i[j]
-                if type(i[j]) is datetime.datetime: val = i[j].strftime("%m/%d/%Y")
-                res += "{:<2} | ".format(i[j])
-
-        print(res) 
+        
+        res = createStr(fields_names, data)
+        print(res)
+        print("CALLBKACK")
         ########## PUBLICA EL RESULTADO COMO EVENTO EN RABBITMQ ##########
         channel.basic_publish(exchange='nestor', routing_key="publicar_slack", body="[sql][result]" + res)
 

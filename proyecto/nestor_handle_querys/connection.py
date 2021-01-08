@@ -27,12 +27,15 @@ def get_query(q):
     cnx = mysql.connector.connect(host = host, port = port, user="root", password="password", database="db")
     # falta comprobacion, querys soportadas !!!
     cur = cnx.cursor()
-    cur.execute(q)
-    n_fields = len(cur.description)
-    fields_names = [i[0] for i in cur.description] 
-    data = cur.fetchall()
-    cnx.close()
-    return fields_names, data
+    try:
+        cur.execute(q)
+        n_fields = len(cur.description)
+        fields_names = [i[0] for i in cur.description] 
+        data = cur.fetchall()
+        cnx.close()
+        return fields_names, data
+    except:
+        return ["Error from query"], [("-")]
 
 
 def save_msg(obj):

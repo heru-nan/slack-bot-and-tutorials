@@ -62,7 +62,9 @@ def message(payload):
 
     elif text.startswith("[wikipedia]"):
         channel.basic_publish(exchange='nestor', routing_key="wikipedia", body=text)
-    
+
+    elif text.startswith("No se puede mostrar este contenido."):
+        print("bot response")
     else:
         strObj = json.dumps(obj)
         channel.basic_publish(exchange='nestor', routing_key="db_messages", body=strObj)

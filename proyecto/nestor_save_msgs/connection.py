@@ -37,6 +37,8 @@ def save_msg(obj):
     
     d_format = datetime.fromtimestamp(float(obj["ts"])).date()
     obj["ts"] = d_format
+    obj["user"] = "<@{}>".format(obj["user"])
+    obj["channel"] = "<@{}>".format(obj["channel"])
     
     cur.execute(INSERT_QUERY, list(obj.values()))
     
